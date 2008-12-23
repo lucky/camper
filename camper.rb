@@ -75,7 +75,7 @@ module Camper
         loop do 
           begin
             chat.listen.each do |msg|
-              next if msg[:person].to_s != ''
+              next if msg[:person].to_s == ''
               text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
               text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
               text.gsub!(/<\/?[^>]*>/, "")
