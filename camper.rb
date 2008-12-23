@@ -21,6 +21,7 @@
 # THE SOFTWARE.
 
 require 'rubygems'
+require 'cgi'
 require 'tinder'
 require 'xmpp4r-simple'
 require 'daemons'
@@ -74,14 +75,16 @@ module Camper
         loop do 
           begin
             chat.listen.each do |msg|
+              next if msg[:person].to_s != ''
               text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
               text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
               text.gsub!(/<\/?[^>]*>/, "")
-              im_deliver(text) if msg[:person].to_s != ''
+              text = CGI::unescapeHTML(text)
+              im_deliver(text)
             end
             im.received_messages { |msg| chat.speak(msg.body) if msg.type == :chat }
             sleep 2
-          rescue TimeoutError
+          rescue TimeoutError, SocketError
           rescue => e
             im_deliver("Error in Camper:\n\n#{e.class.name}\n#{e.backtrace.join("\n")}")
           end
@@ -104,5 +107,4 @@ module Camper
   module_function :start, :config_dir
 end
 
-true
 Camper::start
