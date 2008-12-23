@@ -91,6 +91,8 @@ module Camper
 
               if msg.body == '!users'
                 im_deliver(self.users)
+              elsif msg.body.strip =~ /\n/
+                chat.paste(msg.body)
               else
                 chat.speak(msg.body)
               end
