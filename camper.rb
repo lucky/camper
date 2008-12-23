@@ -70,6 +70,10 @@ module Camper
       opts << {:dir_mode => :normal, :dir => Camper::config_dir, :backtrace => true}
     end
 
+    def users
+      chat.users.join.scan(/<span class="name">(.*)+<\/span>/).flatten.join(", ")
+    end
+
     def run
       Daemons.run_proc(*daemon_opts) do
         loop do 
@@ -82,7 +86,15 @@ module Camper
               text = CGI::unescapeHTML(text)
               im_deliver(text)
             end
-            im.received_messages { |msg| chat.speak(msg.body) if msg.type == :chat }
+            im.received_messages do |msg|
+              next unless msg.type == :chat
+
+              if msg.body == '!users'
+                im_deliver(self.users)
+              else
+                chat.speak(msg.body)
+              end
+            end
             sleep 2
           rescue TimeoutError, SocketError
           rescue => e
