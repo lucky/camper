@@ -28,16 +28,23 @@ require 'daemons'
 require 'yaml'
 
 module Camper
-  class Config
-    def Config.load(file=nil)
-      file ||= "#{Camper::config_dir}config.yaml"
-      YAML.load_file(file)
+  module CampfireExtension
+    def msg(msg, type=:speak)
+      attempts = 0
+      begin
+        attempts += 1
+        self.send(type, msg)
+      rescue TimeoutError, SocketError => e
+        retry if attempts < 3
+        raise e
+      end
     end
   end
 
   class Room
     def initialize(config)
       @config = config
+      chat.extend(CampfireExtension)
     end
 
     def config
@@ -91,14 +98,12 @@ module Camper
 
               if msg.body == '!users'
                 im_deliver(self.users)
-              elsif msg.body.strip =~ /\n/
-                chat.paste(msg.body)
               else
-                chat.speak(msg.body)
+                type = msg.body.strip =~ /\n/ ? :paste : :speak
+                chat.msg(msg.body, type)
               end
             end
             sleep 2
-          rescue TimeoutError, SocketError
           rescue => e
             im_deliver("Error in Camper:\n\n#{e.class.name}\n#{e.backtrace.join("\n")}")
           end
@@ -107,8 +112,13 @@ module Camper
     end 
   end
 
+  def load_config(file=nil)
+    file ||= "#{Camper::config_dir}config.yaml"
+    YAML.load_file(file)
+  end
+
   def start
-    configs = Camper::Config.load
+    configs = Camper::load_config 
     configs["rooms"].each do |config|
       Room.new(config).run
     end
@@ -118,7 +128,7 @@ module Camper
     "#{ENV['HOME']}/.camper/"
   end
 
-  module_function :start, :config_dir
+  module_function :start, :config_dir, :load_config
 end
 
 Camper::start
