@@ -28,6 +28,8 @@ require 'daemons'
 require 'yaml'
 
 module Camper
+  Commands = { "users" => Proc.new { |cf| cf.users } }
+
   module CampfireExtension
     def msg(msg, type=:speak)
       attempts = 0
@@ -86,7 +88,7 @@ module Camper
         loop do 
           begin
             chat.listen.each do |msg|
-              next if msg[:person].to_s == ''
+              next if msg[:person].empty?
               text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
               text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
               text.gsub!(/<\/?[^>]*>/, "")
@@ -96,8 +98,8 @@ module Camper
             im.received_messages do |msg|
               next unless msg.type == :chat
 
-              if msg.body == '!users'
-                im_deliver(self.users)
+              if msg.body.gsub!(/^!/, '') 
+                im_deliver(Commands[msg.body].call chat) if Commands.key? msg.body
               else
                 type = msg.body.strip =~ /\n/ ? :paste : :speak
                 chat.msg(msg.body, type)
