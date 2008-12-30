@@ -9,6 +9,9 @@ A Campfire (37Signals) to Jabber interface
 - xmpp4r-simple
 - daemons
 
+*Note*: Tinder requires Hpricot, which requires a build utilities and Ruby
+development headers.
+
 ## Configuration
 
 You must setup a config.yaml file in a $HOME/.camper directory, formatted like so:
