@@ -95,8 +95,10 @@ module Camper
             im.received_messages do |msg|
               next unless msg.type == :chat
 
-              if msg.body.gsub!(/^!/, '') 
-                im_deliver(Commands[msg.body].call(chat)) if Commands.key? msg.body
+              command = msg.body.scan(/^!(.*)/).flatten[0]
+
+              if Commands.key?(command)
+                im_deliver(Commands[command].call(chat))
               else
                 type = msg.body.strip =~ /\n/ ? :paste : :speak
                 chat.msg(msg.body, type)
