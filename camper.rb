@@ -70,7 +70,26 @@ module Camper
     end
 
     def im_deliver(msg)
-      im.deliver(config[:deliver_to], msg)
+      to = config[:deliver_to]
+      m = Jabber::Message::new(to, Hpricot(msg).to_plain_text).set_type(:chat)
+
+      # HTML Delivery thanks to http://devblog.famundo.com/articles/category/xmpp4r-jabber
+      h = REXML::Element::new("html")
+      h.add_namespace('http://jabber.org/protocol/xhtml-im')
+
+      # The body part with the correct namespace
+      b = REXML::Element::new("body")
+      b.add_namespace('http://www.w3.org/1999/xhtml')
+
+      # The html itself
+      t = REXML::Text.new(msg, false, nil, true, nil, %r/.^/)
+      # Add the html text to the body, and the body to the html element
+      b.add(t)
+      h.add(b)
+
+      # Add the html element to the message
+      m.add_element(h)
+      im.deliver(config[:deliver_to], m)
     end
 
     def daemon_opts
@@ -86,8 +105,8 @@ module Camper
       chat.listen.each do |msg|
         next if msg[:person].empty?
         text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
-        text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
-        im_deliver(Hpricot(text).to_plain_text)
+        text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\2<\1>')
+        im_deliver(text)
       end
     end
 
