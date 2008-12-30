@@ -8,7 +8,6 @@ A Campfire (37Signals) to Jabber interface
 - tinder
 - xmpp4r-simple
 - daemons
-- yaml
 
 ## Configuration
 
