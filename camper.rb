@@ -21,7 +21,6 @@
 # THE SOFTWARE.
 
 require 'rubygems'
-require 'cgi'
 require 'tinder'
 require 'xmpp4r-simple'
 require 'daemons'
@@ -45,7 +44,7 @@ module Camper
 
   class Room
     def initialize(config)
-      @config = config
+      @config = config.symbolize_keys!
       chat.extend(CampfireExtension)
     end
 
@@ -54,28 +53,28 @@ module Camper
     end
 
     def im
-      @im ||= Jabber::Simple.new(config["jabber"]["user"], 
-                                 config["jabber"]["pass"])
+      @im ||= Jabber::Simple.new(config[:jabber][:user], 
+                                 config[:jabber][:pass])
     end
 
     def campfire
       unless @campfire
-        @campfire = Tinder::Campfire.new(config["campfire"]["domain"], :ssl => config["campfire"]["ssl"])
-        @campfire.login(config["campfire"]["user"], config["campfire"]["pass"])
+        @campfire = Tinder::Campfire.new(config[:campfire][:domain], :ssl => config[:campfire][:ssl])
+        @campfire.login(config[:campfire][:user], config[:campfire][:pass])
       end
       @campfire
     end
 
     def chat
-      @chat ||= campfire.find_room_by_name config["campfire"]["room"]
+      @chat ||= campfire.find_room_by_name config[:campfire][:room]
     end
 
     def im_deliver(msg)
-      im.deliver(config["deliver_to"], msg)
+      im.deliver(config[:deliver_to], msg)
     end
 
     def daemon_opts
-      opts = [config["campfire"]["room"]]
+      opts = [config[:campfire][:room]]
       opts << {:dir_mode => :normal, :dir => Camper::config_dir, :backtrace => true}
     end
 
@@ -91,9 +90,7 @@ module Camper
               next if msg[:person].empty?
               text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
               text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
-              text.gsub!(/<\/?[^>]*>/, "")
-              text = CGI::unescapeHTML(text)
-              im_deliver(text)
+              im_deliver(Hpricot(text).to_plain_text)
             end
             im.received_messages do |msg|
               next unless msg.type == :chat
@@ -131,6 +128,21 @@ module Camper
   end
 
   module_function :start, :config_dir, :load_config
+end
+
+class Hash
+
+  def symbolize_keys!
+    keys.each do |k|
+      if nk = k.to_sym
+        self[nk] = self[k]
+        delete(k)
+      end
+      self[nk].symbolize_keys! if self[nk].is_a? Hash
+    end
+    self
+  end
+
 end
 
 Camper::start
