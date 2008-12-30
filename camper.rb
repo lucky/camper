@@ -79,7 +79,7 @@ module Camper
     end
 
     def users
-      chat.users.join.scan(/<span class="name">(.*)+<\/span>/).flatten.join(", ")
+      Hpricot(chat.users.join).search("span").collect {|e| e.inner_text }.join(", ")
     end
 
     def deliver_campfire_messages
@@ -98,7 +98,7 @@ module Camper
         command = msg.body.scan(/^!(.*)/).flatten[0]
 
         if Commands.key?(command)
-          im_deliver(Commands[command].call(chat))
+          im_deliver(Commands[command].call(self))
         else
           type = msg.body.strip =~ /\n/ ? :paste : :speak
           chat.msg(msg.body, type)
