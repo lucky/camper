@@ -82,33 +82,43 @@ module Camper
       chat.users.join.scan(/<span class="name">(.*)+<\/span>/).flatten.join(", ")
     end
 
+    def deliver_campfire_messages
+      chat.listen.each do |msg|
+        next if msg[:person].empty?
+        text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
+        text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
+        im_deliver(Hpricot(text).to_plain_text)
+      end
+    end
+
+    def deliver_jabber_messages
+      im.received_messages do |msg|
+        next unless msg.type == :chat
+
+        command = msg.body.scan(/^!(.*)/).flatten[0]
+
+        if Commands.key?(command)
+          im_deliver(Commands[command].call(chat))
+        else
+          type = msg.body.strip =~ /\n/ ? :paste : :speak
+          chat.msg(msg.body, type)
+        end
+      end
+    end
+
+    def iterate
+      begin
+        deliver_campfire_messages
+        deliver_jabber_messages
+        sleep 2
+      rescue => e
+        im_deliver("Error in Camper:\n\n#{e.class.name}\n#{e.backtrace.join("\n")}")
+      end
+    end
+
     def run
       Daemons.run_proc(*daemon_opts) do
-        loop do 
-          begin
-            chat.listen.each do |msg|
-              next if msg[:person].empty?
-              text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
-              text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
-              im_deliver(Hpricot(text).to_plain_text)
-            end
-            im.received_messages do |msg|
-              next unless msg.type == :chat
-
-              command = msg.body.scan(/^!(.*)/).flatten[0]
-
-              if Commands.key?(command)
-                im_deliver(Commands[command].call(chat))
-              else
-                type = msg.body.strip =~ /\n/ ? :paste : :speak
-                chat.msg(msg.body, type)
-              end
-            end
-            sleep 2
-          rescue => e
-            im_deliver("Error in Camper:\n\n#{e.class.name}\n#{e.backtrace.join("\n")}")
-          end
-        end
+        loop { iterate }
       end
     end 
   end
