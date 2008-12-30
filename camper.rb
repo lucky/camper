@@ -133,12 +133,9 @@ end
 class Hash
 
   def symbolize_keys!
-    keys.each do |k|
-      if nk = k.to_sym
-        self[nk] = self[k]
-        delete(k)
-      end
-      self[nk].symbolize_keys! if self[nk].is_a? Hash
+    self.each do |k,v|
+      self.delete k
+      self[k.to_sym] = (v.is_a? Hash ? v.symbolize_keys! : v )
     end
     self
   end
