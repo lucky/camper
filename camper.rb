@@ -137,11 +137,11 @@ class Hash
   def symbolize_keys!
     self.each do |k,v|
       self.delete k
-      self[k.to_sym] = (v.is_a? Hash ? v.symbolize_keys! : v )
+      self[k.to_sym] = (v.is_a?(Hash)? v.symbolize_keys! : v )
     end
     self
   end
 
 end
 
-Camper::start
+Camper::star)
