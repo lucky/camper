@@ -21,7 +21,6 @@
 # THE SOFTWARE.
 
 require 'rubygems'
-require 'cgi'
 require 'tinder'
 require 'xmpp4r-simple'
 require 'daemons'
@@ -89,9 +88,7 @@ module Camper
               next if msg[:person].to_s == ''
               text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u003C/, '<').gsub(/\\u003E/, '>').gsub(/\\u0026/, "&")
               text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\1')
-              text.gsub!(/<\/?[^>]*>/, "")
-              text = CGI::unescapeHTML(text)
-              im_deliver(text)
+              im_deliver(Hpricot(text).to_plain_text)
             end
             im.received_messages do |msg|
               next unless msg.type == :chat
