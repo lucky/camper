@@ -154,4 +154,4 @@ class Hash
 
 end
 
-Camper::star)
+Camper::start
