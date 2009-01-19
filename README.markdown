@@ -21,10 +21,20 @@ You must setup a config.yaml file in a $HOME/.camper directory, formatted like s
       campfire: 
         ssl: true
         domain: campfiresubdomain 
-        pass: foobar
+        pass: foo
         user: campfireaccount@example.com 
         room: My Chat Room
       jabber: 
-        pass: foobar
+        pass: foo
         user: jabberproxy@example.com
+    - deliver_to: anotherjabberaccount@example.com
+      campfire: 
+        ssl: true
+        domain: campfiresubdomain 
+        pass: bar
+        user: anothercampfireaccount@example.com 
+        room: My Chat Room
+      jabber: 
+        pass: bar
+        user: anotherjabberproxy@example.com
 
