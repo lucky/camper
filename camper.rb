@@ -94,7 +94,7 @@ module Camper
 
     def daemon_opts
       opts = [config[:campfire][:room]]
-      opts << {:dir_mode => :normal, :dir => Camper::config_dir, :backtrace => true}
+      opts << {:multiple => true, :dir_mode => :normal, :dir => Camper::config_dir, :backtrace => true}
     end
 
     def users
