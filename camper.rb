@@ -26,9 +26,19 @@ require 'xmpp4r-simple'
 require 'daemons'
 require 'yaml'
 
-module Camper
-  Commands = { "users" => Proc.new { |c| c.users }}
+class Tinder::Room
+  def left?
+    return true if @room.nil?
+  end
+end
 
+module Camper
+  Commands = { 
+    "users" => Proc.new { |c| c.users },
+    "leave" => Proc.new { |c| if c.chat.left?; "already left"; else c.chat.leave; "left #{c.chat.name}"; end },
+    "join" => Proc.new { |c| unless c.chat.left?; "already joined"; else c.chat.join; "joined #{c.chat.name}"; end },
+    "status" => Proc.new { |c| c.chat.left? ? "not in room" : "in room #{c.chat.name}" },
+  }
   module CampfireExtension
     def msg(msg, type=:speak)
       attempts = 0
@@ -118,6 +128,8 @@ module Camper
 
         if Commands.key?(command)
           im_deliver(Commands[command].call(self))
+        elsif chat.left?
+          im_deliver("You're not in the room.  Send !join to join again")
         else
           type = msg.body.strip =~ /\n/ ? :paste : :speak
           chat.msg(msg.body, type)
@@ -127,7 +139,7 @@ module Camper
 
     def iterate
       begin
-        deliver_campfire_messages
+        deliver_campfire_messages unless chat.left?
         deliver_jabber_messages
         sleep 2
       rescue => e
