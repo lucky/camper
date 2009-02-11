@@ -26,12 +26,6 @@ require 'xmpp4r-simple'
 require 'daemons'
 require 'yaml'
 
-class Tinder::Room
-  def left?
-    return true if @room.nil?
-  end
-end
-
 module Camper
   Commands = { 
     "users" => Proc.new { |c| c.users },
@@ -49,6 +43,10 @@ module Camper
         retry if attempts < 3
         raise e
       end
+    end
+
+    def left?
+      return true if @room.nil?
     end
   end
 
