@@ -79,7 +79,15 @@ module Camper
 
     def im_deliver(msg)
       to = config[:deliver_to]
-      m = Jabber::Message::new(to, Hpricot(msg).to_plain_text).set_type(:chat)
+      msg.gsub!(/\\"/, '"')
+      doc = Hpricot(msg)
+      if img = doc.at("img")
+        src = img['src']
+        img.swap(src)
+      end
+
+      msg = doc.to_html
+      m = Jabber::Message::new(to, CGI.escapeHTML(Hpricot(msg).to_plain_text)).set_type(:chat)
 
       # HTML Delivery thanks to http://devblog.famundo.com/articles/category/xmpp4r-jabber
       h = REXML::Element::new("html")
@@ -112,8 +120,7 @@ module Camper
     def deliver_campfire_messages
       chat.listen.each do |msg|
         next if msg[:person].empty?
-        text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u([0-9a-fA-F]+)/) { [$1.to_i(16)].pack("U") }
-        text.gsub!(/<a href=\\"(.*)\\" target=\\"_blank\\">(.*)<\/a>/, '\2<\1>')
+        text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u([0-9a-zA-Z]{4})/) { [$1.to_i(16)].pack("U") }
         im_deliver(text)
       end
     end

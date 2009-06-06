@@ -12,6 +12,10 @@ A Campfire (37Signals) to Jabber interface
 *Note*: Tinder requires Hpricot, which requires a build utilities and Ruby
 development headers.
 
+Start Camper with:
+
+    ruby camper.rb start
+
 ## Configuration
 
 You must setup a config.yaml file in a $HOME/.camper directory, formatted like so:
