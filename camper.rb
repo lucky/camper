@@ -120,7 +120,7 @@ module Camper
     def deliver_campfire_messages
       chat.listen.each do |msg|
         next if msg[:person].empty?
-        text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u([0-9a-zA-Z]{4})/) { [$1.to_i(16)].pack("U") }
+        text = "#{msg[:person]}: #{msg[:message]}".gsub(/(\\n)+/, "\n").gsub(/\\u([0-9a-fA-F]{4})/) { [$1.to_i(16)].pack("U") }
         im_deliver(text)
       end
     end
